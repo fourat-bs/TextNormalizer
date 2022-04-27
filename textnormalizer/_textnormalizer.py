@@ -33,7 +33,7 @@ class TextNormalizer:
 
     def embed(self, sentences: List[str], **kwargs) -> torch.Tensor:
         """
-        Encode the sentences using the encoder of the model
+        Encode the sentences using the model's encoder and return the embeddings
         :param sentences: List of strings to encode
         :param kwargs: Additional arguments for the tokenizer
         :return: A tensor with the encoded sentences
@@ -48,7 +48,7 @@ class TextNormalizer:
 
     def fit(self, normalized: List[str], **kwargs):
         """
-        compute the embeddings of the normalized sentences and store them in self.embeddings.
+        Compute the embeddings of the normalized sentences and store them in self.embeddings.
         :param normalized: List of strings that are already normalized
         :param kwargs:  Additional arguments for the tokenizer
         :return: A vector representation of the normalized sentences
@@ -72,9 +72,6 @@ class TextNormalizer:
         to_normalize_embeddings = self.embed(to_normalize)
         indices = compute_similarity(to_normalize_embeddings, self.embeddings)
         return [self.sentences[i] for i in indices]
-
-    def fit_transform(self, normalized: List[str], to_normalize: List[str]) -> List[str]:
-        pass
 
     def save(self, path: str):
         """

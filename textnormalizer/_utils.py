@@ -60,3 +60,6 @@ def is_valid_input(input_list: List[str]):
 
     if contains_empty(input_list):
         raise InvalidDataError('Input List cannot contain empty string')
+
+    if not isinstance(input_list, list):
+        raise TypeError('Input must be a list')
