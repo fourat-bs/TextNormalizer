@@ -6,15 +6,15 @@
 It is designed for repeated normalization of strings against a large corpus of strings. <br>
 The main contribution of `TextNormalizer` is to gain time by eliminating the need to compute the normalized strings embeddings every time. 
 ## Setup
-```bash
-pip install textnormalizer
+``` bash
+pip install t-normalizer
 ```
 ## Usage
 1. Create and instance of `TextNormalizer`, can be initialized with a `SentenceTransformer` model or a `SentenceTransformer` model path.
 2. Obtain the vector representation of the normalized string with `.fit` method.
 3. Transform the string with to the most similar normalized form using the `.transform` method.
 
-```python
+``` python
 from textnormalizer import TextNormalizer
 
 normalizer = TextNormalizer()
@@ -28,7 +28,7 @@ transformed = normalizer.transform(to_normalize)
 The model along with the normalized strings and their  vector representations can be saved and loaded with `.save` and `.load` methods.
 ## Serialization
 
-```python
+``` python
 # save
 normalizer.save('path/to/model')
 
