@@ -4,9 +4,10 @@ from transformers import AutoTokenizer, AutoModel
 import torch
 import torch.nn.functional as F
 from typing import List
-from ._utils import is_valid_input, TNLogger
+from ._utils import is_valid_input, TNLogger, DataGenerator
 import os
 import joblib
+from tqdm import tqdm
 
 logger = TNLogger('INFO')
 
@@ -24,6 +25,7 @@ class TextNormalizer:
         self.encoder = AutoModel.from_pretrained(model_name)
         self.sentences = None
         self.embeddings = None
+        self.batch_size = None
 
     @staticmethod
     def mean_pooling(model_output, attention_mask):
@@ -38,33 +40,39 @@ class TextNormalizer:
         :param kwargs: Additional arguments for the tokenizer
         :return: A tensor with the encoded sentences
         """
-        encoded_input = self.tokenizer(sentences, padding=True, truncation=True, return_tensors='pt', **kwargs)
-        with torch.no_grad():
-            output = self.encoder(**encoded_input)
-        sentence_embeddings = self.mean_pooling(output, encoded_input['attention_mask'])
-        sentence_embeddings = F.normalize(sentence_embeddings, p=2, dim=1)
+        embeddings = []
+        data_generator = DataGenerator(sentences, batch_size=self.batch_size)
+        for item in tqdm(data_generator):
+            encoded_input = self.tokenizer(item, padding=True, truncation=True, return_tensors='pt', **kwargs)
+            with torch.no_grad():
+                output = self.encoder(**encoded_input)
+            sentence_embeddings = self.mean_pooling(output, encoded_input['attention_mask'])
+            embeddings.append(F.normalize(sentence_embeddings, p=2, dim=1))
+        return torch.cat(embeddings, dim=0)
 
-        return sentence_embeddings
-
-    def fit(self, normalized: List[str], **kwargs):
+    def fit(self, normalized: List[str], batch_size=32, **kwargs):
         """
         Compute the embeddings of the normalized sentences and store them in self.embeddings.
+        :param batch_size: the batch size to use for the encoder
         :param normalized: List of strings that are already normalized
         :param kwargs:  Additional arguments for the tokenizer
         :return: A vector representation of the normalized sentences
         """
         is_valid_input(normalized)
+        self.batch_size = batch_size
         self.embeddings = self.embed(normalized, **kwargs)
         self.sentences = normalized
 
         return self
 
-    def transform(self, to_normalize: List[str]) -> List[str]:
+    def transform(self, to_normalize: List[str], batch_size=1) -> List[str]:
         """
         Compute the embeddings of the sentences to normalize and return the closest normalized sentence.
+        :param batch_size:
         :param to_normalize:
         :return:
         """
+        self.batch_size = batch_size
         if self.embeddings is None:
             raise NotFitedError(
                 f'You need to fit this {type(self).__name__} instance first before using the transform method')
@@ -79,7 +87,7 @@ class TextNormalizer:
         :param path: a valid path
         """
         if self.embeddings is None:
-            logger.info('attempt to save a model that has not been fitted yet')
+            logger.warning(f'attempt to save a {type(self).__name__} model that has not been fitted yet')
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
         with open(path, 'wb') as f:

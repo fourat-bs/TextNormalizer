@@ -1,6 +1,7 @@
 from typing import List
 import logging
 from ._exceptions import InvalidDataError
+import numpy as np
 
 
 class TNLogger:
@@ -25,6 +26,9 @@ class TNLogger:
         self.logger.addHandler(sh)
         if len(self.logger.handlers) > 1:
             self.logger.handlers = [self.logger.handlers[0]]
+
+    def warning(self, message):
+        self.logger.warning(f'{message}')
 
 
 def is_empty(input_list: List[str]) -> bool:
@@ -63,3 +67,21 @@ def is_valid_input(input_list: List[str]):
 
     if not isinstance(input_list, list):
         raise TypeError('Input must be a list')
+
+
+class DataGenerator:
+    def __init__(self, data, batch_size=32):
+        self.data = data
+        self.batch_size = batch_size
+        self.steps = len(self.data) // self.batch_size
+        if len(self.data) % self.batch_size != 0:
+            self.steps += 1
+
+    def __len__(self):
+        return self.steps
+
+    def __iter__(self):
+        idx = 0
+        while idx < self.steps:
+            yield self.data[idx * self.batch_size:(idx + 1) * self.batch_size]
+            idx += 1
