@@ -2,6 +2,11 @@ from typing import List
 import logging
 from ._exceptions import InvalidDataError
 import numpy as np
+import wandb
+from torch.utils.data import Dataset
+from torch.optim import AdamW
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.tensorboard import SummaryWriter
 
 
 class TNLogger:
@@ -85,3 +90,19 @@ class DataGenerator:
         while idx < self.steps:
             yield self.data[idx * self.batch_size:(idx + 1) * self.batch_size]
             idx += 1
+
+
+class Trainer:
+    def __init__(self, model, data_loader, metrics, loss, optimizer):
+        self.model = model
+        self.data_loader = data_loader
+        self.loss = loss
+        self.optimizer = optimizer
+        self.metrics = metrics
+
+    def train(self, logger,  callbacks, epochs=1):
+        try:
+            import wandb
+        except:
+            logger.warning('W&B is not installed. Please install it in order to track the experiment.')
+            pass
